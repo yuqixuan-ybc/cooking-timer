@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智能预约时间计算器</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f5f5f5;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 10px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-top: 0;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .time-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #28a745;
+            display: block;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            font-size: 1.1em;
+            -webkit-appearance: none;
+        }
+        button:active {
+            background-color: #0056b3;
+        }
+        .note {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        @media (hover: none) {
+            button:active {
+                opacity: 0.8;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>智能预约时间计算器</h1>
+        <div>
+            <p>当前时间：<span id="currentTime"></span></p>
+            <p>目标用餐时间：9:30</p>
+            <p>煲汤锅煮汤时间：1.5小时</p>
+            <p>电饭煲煮饭时间：0.5小时</p>
+        </div>
+        <button onclick="calculateReservationTime()">计算预约时间</button>
+        <div class="result">
+            <h3>预约建议：</h3>
+            <p>煲汤锅：<span id="soupTime" class="time-display"></span></p>
+            <p>电饭煲：<span id="riceTime" class="time-display"></span></p>
+            <p class="note">注：食物将在9:30前准备完成，可以使用保温功能。</p>
+        </div>
+    </div>
+
+    <script>
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = 
+                now.toLocaleTimeString('zh-CN', { hour12: false });
+        }
+
+        function formatTime(hours) {
+            const wholeHours = Math.floor(hours);
+            const minutes = Math.round((hours - wholeHours) * 60);
+            
+            // 计算半小时刻度的时间
+            const halfHourScale = Math.ceil(hours * 2) / 2;
+            const halfHourDisplay = halfHourScale % 1 === 0 ? 
+                `${halfHourScale}小时` : 
+                `${Math.floor(halfHourScale)}小时30分钟`;
+
+            // 格式化精确时间
+            let exactTime;
+            if (minutes === 0) {
+                exactTime = `${wholeHours}小时`;
+            } else if (wholeHours === 0) {
+                exactTime = `${minutes}分钟`;
+            } else {
+                exactTime = `${wholeHours}小时${minutes}分钟`;
+            }
+
+            // 组合显示
+            return `${exactTime}（${halfHourDisplay}）`;
+        }
+
+        function calculateReservationTime() {
+            const now = new Date();
+            const targetHour = 9;
+            const targetMinute = 30;
+            
+            // 设置目标时间（比9:30提前一分钟，确保一定在9:30前完成）
+            let targetTime = new Date(now);
+            targetTime.setHours(targetHour, targetMinute - 1, 0);
+            
+            // 如果目标时间已经过了，设置为明天
+            if (now > targetTime) {
+                targetTime.setDate(targetTime.getDate() + 1);
+            }
+
+            // 计算煲汤锅和电饭煲的完成时间（目标时间）
+            const soupFinishTime = new Date(targetTime);
+            const riceFinishTime = new Date(targetTime);
+
+            // 计算开始时间（从完成时间倒推）
+            const soupStartTime = new Date(soupFinishTime - 1.5 * 60 * 60 * 1000);
+            const riceStartTime = new Date(riceFinishTime - 0.5 * 60 * 60 * 1000);
+            
+            // 计算需要预约的时间（精确到分钟）
+            const soupReservationHours = (soupStartTime - now) / (60 * 60 * 1000);
+            const riceReservationHours = (riceStartTime - now) / (60 * 60 * 1000);
+
+            // 显示结果
+            document.getElementById('soupTime').textContent = 
+                formatTime(Math.max(0, soupReservationHours));
+            document.getElementById('riceTime').textContent = 
+                formatTime(Math.max(0, riceReservationHours));
+        }
+
+        // 每秒更新当前时间
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+        calculateReservationTime();
+    </script>
+</body>
+</html>
